@@ -53,8 +53,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/openlaunch"]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
+    "pylint>=3.3.9",
     "pytest>=7.0.0",
     "ruff>=0.1.0",
 ]
@@ -66,6 +67,23 @@ target-version = "py39"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 ignore = ["E501"]  # Line length handled separately
+
+[tool.pylint.main]
+py-version = "3.9"
+
+[tool.pylint.messages_control]
+disable = [
+    "too-many-instance-attributes",  # Radar and monitor classes need many attributes
+    "too-many-public-methods",       # Radar API has many commands
+    "too-many-locals",               # Distance estimation lookup table
+    "too-many-statements",           # CLI main function
+    "import-outside-toplevel",       # argparse in main() is fine
+    "broad-exception-caught",        # Generic catch in streaming loop is intentional
+    "invalid-name",                  # Allow DRIVER_TABLE, CLUB_FACTORS constants
+]
+
+[tool.pylint.format]
+max-line-length = 100
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

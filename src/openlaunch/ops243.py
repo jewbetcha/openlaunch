@@ -17,14 +17,15 @@ Speed limits by sample rate (per API docs):
 - 100kHz (SC): max 695 mph  - overkill but works
 """
 
+import json
+import threading
+import time
+from dataclasses import dataclass
+from enum import Enum
+from typing import Callable, List, Optional
+
 import serial
 import serial.tools.list_ports
-import json
-import time
-import threading
-from dataclasses import dataclass
-from typing import Optional, Callable, List
-from enum import Enum
 
 
 class SpeedUnit(Enum):
@@ -156,7 +157,7 @@ class OPS243Radar:
             self.serial.reset_input_buffer()
             return True
         except serial.SerialException as e:
-            raise ConnectionError(f"Failed to connect to {self.port}: {e}")
+            raise ConnectionError(f"Failed to connect to {self.port}: {e}") from e
 
     def disconnect(self):
         """Disconnect from the radar sensor."""
@@ -568,18 +569,17 @@ class OPS243Radar:
                     timestamp=time.time(),
                     unit=self._unit
                 )
-            else:
-                # Plain number format
-                # Negative = inbound, positive = outbound
-                speed = float(line)
-                direction = Direction.OUTBOUND if speed > 0 else Direction.INBOUND
+            # Plain number format
+            # Negative = inbound, positive = outbound
+            speed = float(line)
+            direction = Direction.OUTBOUND if speed > 0 else Direction.INBOUND
 
-                return SpeedReading(
-                    speed=abs(speed),
-                    direction=direction,
-                    timestamp=time.time(),
-                    unit=self._unit
-                )
+            return SpeedReading(
+                speed=abs(speed),
+                direction=direction,
+                timestamp=time.time(),
+                unit=self._unit
+            )
         except (ValueError, json.JSONDecodeError):
             return None
 

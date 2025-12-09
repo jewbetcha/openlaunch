@@ -12,7 +12,7 @@ from typing import Optional, List, Callable
 from datetime import datetime
 from enum import Enum
 
-from .ops243 import OPS243Radar, SpeedReading, Direction
+from .ops243 import OPS243Radar, SpeedReading
 
 
 class ClubType(Enum):
@@ -315,7 +315,7 @@ class LaunchMonitor:
             min_speed = self.MIN_BALL_SPEED_MPH
 
         # Filter by realistic speeds
-        if not (min_speed <= reading.speed <= self.MAX_BALL_SPEED_MPH):
+        if not min_speed <= reading.speed <= self.MAX_BALL_SPEED_MPH:
             return
 
         # Check if this is part of current shot or new shot
@@ -369,9 +369,11 @@ class LaunchMonitor:
             club_speed_tolerance = 20  # mph tolerance
 
             # Find readings that could be club (within expected range)
+            club_speed_min = expected_club_speed - club_speed_tolerance
+            club_speed_max = expected_club_speed + club_speed_tolerance
             potential_club_speeds = [
                 s for s in speeds
-                if (expected_club_speed - club_speed_tolerance) <= s <= (expected_club_speed + club_speed_tolerance)
+                if club_speed_min <= s <= club_speed_max
                 and s < peak_speed * 0.85  # Must be significantly less than ball speed
             ]
 
@@ -380,7 +382,7 @@ class LaunchMonitor:
                 club_speed = max(potential_club_speeds)
 
                 # Validate: club speed should be realistic
-                if not (self.MIN_CLUB_SPEED_MPH <= club_speed <= self.MAX_CLUB_SPEED_MPH):
+                if not self.MIN_CLUB_SPEED_MPH <= club_speed <= self.MAX_CLUB_SPEED_MPH:
                     club_speed = None
 
         # Ball speed is the peak
@@ -508,7 +510,7 @@ def main():
                 print("Radar Configuration:")
                 for key, value in info.items():
                     print(f"  {key}: {value}")
-                return
+                return 0
 
             print("Ready! Swing when ready...")
             print("Press Ctrl+C to stop")
@@ -565,4 +567,5 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    import sys
+    sys.exit(main())
