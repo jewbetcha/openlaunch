@@ -191,6 +191,29 @@ The OPS243-A handles this with:
 
 Based on link budget analysis, the OPS243-A should reliably detect golf balls at **4-5 meters (13-16 feet)**, making the 3-5 foot positioning ideal.
 
+### System Architecture
+
+The data flows from radar to UI like this:
+
+```
+┌─────────────┐  USB/Serial  ┌─────────────┐  Callback   ┌─────────────┐  WebSocket  ┌─────────────┐
+│  OPS243-A   │ ───────────▶ │   Launch    │ ──────────▶ │   Flask     │ ──────────▶ │   React     │
+│   Radar     │  Speed data  │   Monitor   │  on_shot()  │   Server    │   "shot"    │     UI      │
+└─────────────┘              └─────────────┘             └─────────────┘             └─────────────┘
+```
+
+1. **Radar streams data** - The OPS243-A continuously sends speed readings over USB serial whenever it detects motion
+
+2. **LaunchMonitor processes readings** - A background thread reads serial data, accumulates readings, and when there's a gap (no readings for 0.5s), analyzes the data to create a `Shot` object with ball speed, club speed, and smash factor
+
+3. **Callback fires** - When a shot is detected, the callback function registered via `monitor.start(shot_callback=...)` is called with the `Shot` object
+
+4. **Server broadcasts to clients** - The Flask server's callback converts the shot to JSON and emits it to all connected browsers via WebSocket
+
+5. **React updates UI** - The `useSocket` hook receives the event and updates state, triggering a re-render with the new shot data
+
+This callback pattern keeps the components decoupled - `LaunchMonitor` doesn't know about Flask or WebSockets, it just calls whatever function you give it.
+
 ## Configuration
 
 The radar can be configured via API commands:
