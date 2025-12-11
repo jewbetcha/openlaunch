@@ -10,7 +10,7 @@ import './App.css';
 type View = 'live' | 'stats' | 'shots';
 
 function App() {
-  const { connected, latestShot, shots, clearSession, setClub, simulateShot } = useSocket();
+  const { connected, mockMode, latestShot, shots, clearSession, setClub, simulateShot } = useSocket();
   const [currentView, setCurrentView] = useState<View>('live');
   const [selectedClub, setSelectedClub] = useState('driver');
 
@@ -57,9 +57,11 @@ function App() {
         {currentView === 'live' && (
           <div className="live-view">
             <ShotDisplay shot={latestShot} isLatest={true} />
-            <button className="simulate-button" onClick={simulateShot}>
-              Simulate Shot
-            </button>
+            {mockMode && (
+              <button className="simulate-button" onClick={simulateShot}>
+                Simulate Shot
+              </button>
+            )}
           </div>
         )}
         {currentView === 'stats' && (

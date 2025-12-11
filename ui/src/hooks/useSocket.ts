@@ -7,6 +7,7 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:8080';
 export function useSocket() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
+  const [mockMode, setMockMode] = useState(false);
   const [latestShot, setLatestShot] = useState<Shot | null>(null);
   const [shots, setShots] = useState<Shot[]>([]);
   const [stats, setStats] = useState<SessionStats | null>(null);
@@ -34,10 +35,13 @@ export function useSocket() {
       setStats(data.stats);
     });
 
-    newSocket.on('session_state', (data: SessionState) => {
+    newSocket.on('session_state', (data: SessionState & { mock_mode?: boolean }) => {
       console.log('Session state received:', data);
       setShots(data.shots);
       setStats(data.stats);
+      if (data.mock_mode !== undefined) {
+        setMockMode(data.mock_mode);
+      }
       if (data.shots.length > 0) {
         setLatestShot(data.shots[data.shots.length - 1]);
       }
@@ -70,6 +74,7 @@ export function useSocket() {
 
   return {
     connected,
+    mockMode,
     latestShot,
     shots,
     stats,

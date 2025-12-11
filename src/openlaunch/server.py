@@ -23,6 +23,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Global state
 monitor: Optional["LaunchMonitor | MockLaunchMonitor"] = None
+mock_mode: bool = False
 
 
 def shot_to_dict(shot: Shot) -> dict:
@@ -61,7 +62,7 @@ def handle_connect():
     if monitor:
         stats = monitor.get_session_stats()
         shots = [shot_to_dict(s) for s in monitor.get_shots()]
-        socketio.emit("session_state", {"stats": stats, "shots": shots})
+        socketio.emit("session_state", {"stats": stats, "shots": shots, "mock_mode": mock_mode})
 
 
 @socketio.on("disconnect")
@@ -121,8 +122,9 @@ def on_shot_detected(shot: Shot):
 
 def start_monitor(port: Optional[str] = None, mock: bool = False):
     """Start the launch monitor."""
-    global monitor  # pylint: disable=global-statement
+    global monitor, mock_mode  # pylint: disable=global-statement
 
+    mock_mode = mock
     if mock:
         # Mock mode for testing without radar
         monitor = MockLaunchMonitor()
