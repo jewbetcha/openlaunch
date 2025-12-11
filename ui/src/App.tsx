@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useSocket } from './hooks/useSocket';
 import { ShotDisplay } from './components/ShotDisplay';
-import { ShotHistory } from './components/ShotHistory';
+import { StatsView } from './components/StatsView';
+import { ShotList } from './components/ShotList';
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { ClubPicker } from './components/ClubPicker';
 import './App.css';
 
-type View = 'live' | 'history';
+type View = 'live' | 'stats' | 'shots';
 
 function App() {
   const { connected, latestShot, shots, clearSession, setClub, simulateShot } = useSocket();
@@ -36,10 +37,16 @@ function App() {
           Live
         </button>
         <button
-          className={`nav__button ${currentView === 'history' ? 'nav__button--active' : ''}`}
-          onClick={() => setCurrentView('history')}
+          className={`nav__button ${currentView === 'stats' ? 'nav__button--active' : ''}`}
+          onClick={() => setCurrentView('stats')}
         >
-          History
+          Stats
+        </button>
+        <button
+          className={`nav__button ${currentView === 'shots' ? 'nav__button--active' : ''}`}
+          onClick={() => setCurrentView('shots')}
+        >
+          Shots
           {shots.length > 0 && (
             <span className="nav__badge">{shots.length}</span>
           )}
@@ -47,18 +54,19 @@ function App() {
       </nav>
 
       <main className="main">
-        {currentView === 'live' ? (
-          <>
+        {currentView === 'live' && (
+          <div className="live-view">
             <ShotDisplay shot={latestShot} isLatest={true} />
             <button className="simulate-button" onClick={simulateShot}>
               Simulate Shot
             </button>
-          </>
-        ) : (
-          <ShotHistory
-            shots={shots}
-            onClearSession={clearSession}
-          />
+          </div>
+        )}
+        {currentView === 'stats' && (
+          <StatsView shots={shots} onClearSession={clearSession} />
+        )}
+        {currentView === 'shots' && (
+          <ShotList shots={shots} />
         )}
       </main>
     </div>

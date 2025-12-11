@@ -1,0 +1,90 @@
+.shot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.shot-list--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 1.125rem;
+}
+
+.shot-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  /* Touch-friendly row height */
+  min-height: 52px;
+  touch-action: manipulation;
+}
+
+.shot-row:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.shot-row__number {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.4);
+  min-width: 2rem;
+}
+
+.shot-row__club {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.15);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.shot-row__speed {
+  flex: 1;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #00ff88;
+}
+
+.shot-row__speed::after {
+  content: ' mph';
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.shot-row__carry {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 4rem;
+  text-align: right;
+}
+
+.shot-row__smash {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+/* Responsive for smaller screens */
+@media (max-width: 500px) {
+  .shot-row {
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+
+  .shot-row__smash {
+    display: none;
+  }
+}
