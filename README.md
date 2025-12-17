@@ -332,6 +332,37 @@ Contributions welcome! Areas of interest:
 - **GUI**: Create a nice visual interface
 - **Mobile app**: Bluetooth connection to phone
 
+### Camera Calibration
+
+If you have the optional camera module for launch angle detection, use the calibration script to tune detection settings:
+
+```bash
+# Live view with ball detection overlay
+python scripts/calibrate_camera.py
+
+# Without detection overlay (just camera feed)
+python scripts/calibrate_camera.py --no-detect
+
+# Mock mode (no camera hardware, uses synthetic frames)
+python scripts/calibrate_camera.py --mock
+
+# Adjust camera settings
+python scripts/calibrate_camera.py --exposure 2000 --gain 4.0 --threshold 200
+```
+
+**Keyboard controls during calibration:**
+| Key | Action |
+|-----|--------|
+| `q` | Quit |
+| `s` | Save current frame |
+| `t` | Toggle threshold view |
+| `d` | Toggle detection overlay |
+| `+`/`-` | Adjust brightness threshold |
+| `[`/`]` | Adjust minimum radius |
+| `{`/`}` | Adjust maximum radius |
+
+The script will display final settings when you exit - use these values to configure `DetectorConfig` in your code.
+
 ### Running Tests
 
 ```bash
