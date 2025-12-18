@@ -49,6 +49,7 @@ Hardware components for building the OpenLaunch golf launch monitor.
 |------|-------------|------|--------|
 | Pi Case with Camera Mount | Enclosure for Pi + HQ Camera | Various | $15-30 |
 | Tripod Mount | For positioning the unit | 1/4"-20 mount | $10 |
+| **850nm IR Pass Filter** | For outdoor use - blocks visible light, only passes IR | [Kurokesu](https://www.kurokesu.com/shop/D19x1_NIR_SCREWIN) | ~$20 |
 
 ---
 

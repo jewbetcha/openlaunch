@@ -19,7 +19,7 @@ from .launch_monitor import LaunchMonitor, Shot, ClubType
 
 app = Flask(__name__, static_folder="../../ui/dist", static_url_path="")
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 # Global state
 monitor: Optional["LaunchMonitor | MockLaunchMonitor"] = None
