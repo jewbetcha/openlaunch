@@ -45,6 +45,9 @@ except ImportError:
 # COCO class ID for "sports ball" is 32
 SPORTS_BALL_CLASS = 32
 
+# For fine-tuned golf ball models, class 0 is typically the golf ball
+GOLF_BALL_CLASS = 0
+
 
 def main():
     parser = argparse.ArgumentParser(description="Test YOLO Ball Detection")
@@ -110,7 +113,7 @@ def main():
         print(f"Found {len(detections)} objects:")
         for d in detections:
             print(f"  - {d['class']} (id={d['class_id']}, conf={d['confidence']:.2f})")
-            if d['class_id'] == SPORTS_BALL_CLASS or 'ball' in d['class'].lower():
+            if d['class_id'] == SPORTS_BALL_CLASS or d['class_id'] == GOLF_BALL_CLASS or 'ball' in d['class'].lower():
                 print(f"    ^^^ BALL DETECTED!")
 
         # Save result
@@ -157,13 +160,13 @@ def main():
                     x1, y1, x2, y2 = box.xyxy[0].tolist()
 
                     # Draw box
-                    color = (0, 255, 0) if cls == SPORTS_BALL_CLASS or 'ball' in class_name.lower() else (255, 0, 0)
+                    color = (0, 255, 0) if cls == SPORTS_BALL_CLASS or cls == GOLF_BALL_CLASS or 'ball' in class_name.lower() else (255, 0, 0)
                     cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
                     label = f"{class_name} {conf:.2f}"
                     cv2.putText(frame, label, (int(x1), int(y1) - 10),
                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-                    if cls == SPORTS_BALL_CLASS or 'ball' in class_name.lower():
+                    if cls == SPORTS_BALL_CLASS or cls == GOLF_BALL_CLASS or 'ball' in class_name.lower():
                         ball_detected = True
 
             # Save frame
@@ -215,7 +218,7 @@ def main():
                     class_name = model.names[cls]
                     x1, y1, x2, y2 = box.xyxy[0].tolist()
 
-                    is_ball = cls == SPORTS_BALL_CLASS or 'ball' in class_name.lower()
+                    is_ball = cls == SPORTS_BALL_CLASS or cls == GOLF_BALL_CLASS or 'ball' in class_name.lower()
                     color = (0, 255, 0) if is_ball else (128, 128, 128)
                     thickness = 2 if is_ball else 1
 
