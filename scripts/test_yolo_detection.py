@@ -76,6 +76,7 @@ def main():
     parser.add_argument("--no-display", action="store_true", help="Skip drawing overlays for max speed")
     parser.add_argument("--buffer-count", type=int, default=2, help="Camera buffer count (lower=less latency)")
     parser.add_argument("--fps", type=int, default=60, help="Target camera FPS")
+    parser.add_argument("--export-onnx", action="store_true", help="Export model to ONNX and exit")
     args = parser.parse_args()
 
     if not YOLO_AVAILABLE or not CV2_AVAILABLE:
@@ -91,6 +92,14 @@ def main():
     # Load YOLO model
     print(f"Loading model: {args.model}")
     model = YOLO(args.model)
+
+    # Export to ONNX if requested
+    if args.export_onnx:
+        print(f"Exporting model to ONNX (imgsz={args.imgsz})...")
+        export_path = model.export(format="onnx", imgsz=args.imgsz, half=args.half, simplify=True)
+        print(f"Exported to: {export_path}")
+        print("Now run with: --model <path_to_onnx>")
+        return 0
 
     # Performance settings summary
     print(f"  Inference size: {args.imgsz}x{args.imgsz}")
