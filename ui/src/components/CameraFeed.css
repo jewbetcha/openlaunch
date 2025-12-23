@@ -1,0 +1,150 @@
+.camera-feed {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: rgba(15, 15, 26, 0.8);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.camera-feed--unavailable {
+  justify-content: center;
+  align-items: center;
+}
+
+.camera-feed__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.camera-feed__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.camera-feed__controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.camera-feed__button {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.camera-feed__button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.camera-feed__button--active {
+  background: rgba(0, 255, 136, 0.2);
+  border-color: #00ff88;
+  color: #00ff88;
+}
+
+.camera-feed__button--streaming {
+  background: rgba(255, 100, 100, 0.2);
+  border-color: #ff6464;
+  color: #ff6464;
+}
+
+.camera-feed__content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.camera-feed__message {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.camera-feed__message--error {
+  color: #ff6464;
+}
+
+.camera-feed__icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.camera-feed__message h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.camera-feed__message p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.camera-feed__detection {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 20px;
+  background: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.camera-feed__detection--detected {
+  background: rgba(0, 255, 136, 0.15);
+  color: #00ff88;
+}
+
+.camera-feed__stream {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.camera-feed__video {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.camera-feed__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 0.75rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.camera-feed__status {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffc107;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.camera-feed__status--detected {
+  color: #00ff88;
+}

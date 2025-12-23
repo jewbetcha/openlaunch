@@ -11,6 +11,8 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 PORT=8080
 HOST="localhost"
 MOCK_MODE=false
+CAMERA_MODE=false
+CAMERA_MODEL="models/golf_ball_yolo11n.onnx"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -18,6 +20,14 @@ while [[ $# -gt 0 ]]; do
         --mock|-m)
             MOCK_MODE=true
             shift
+            ;;
+        --camera|-c)
+            CAMERA_MODE=true
+            shift
+            ;;
+        --camera-model)
+            CAMERA_MODEL="$2"
+            shift 2
             ;;
         --port|-p)
             PORT="$2"
@@ -80,14 +90,29 @@ if [ ! -d "ui/dist" ]; then
     cd ..
 fi
 
+# Build server command
+SERVER_CMD="openlaunch-server --web-port $PORT"
+
+if [ "$MOCK_MODE" = true ]; then
+    SERVER_CMD="$SERVER_CMD --mock"
+fi
+
+if [ "$CAMERA_MODE" = true ]; then
+    SERVER_CMD="$SERVER_CMD --camera --camera-model $CAMERA_MODEL"
+fi
+
 # Start the server
 if [ "$MOCK_MODE" = true ]; then
     log "Starting OpenLaunch server on port $PORT (MOCK MODE)..."
-    openlaunch-server --web-port $PORT --mock &
 else
     log "Starting OpenLaunch server on port $PORT..."
-    openlaunch-server --web-port $PORT &
 fi
+
+if [ "$CAMERA_MODE" = true ]; then
+    log "Camera enabled with model: $CAMERA_MODEL"
+fi
+
+$SERVER_CMD &
 SERVER_PID=$!
 
 # Wait for server to be ready

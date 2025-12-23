@@ -18,6 +18,14 @@ export interface RadarConfig {
   transmit_power: number;
 }
 
+export interface CameraStatus {
+  available: boolean;
+  enabled: boolean;
+  streaming: boolean;
+  ball_detected: boolean;
+  ball_confidence: number;
+}
+
 export function useSocket() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
@@ -33,6 +41,15 @@ export function useSocket() {
   const [latestShot, setLatestShot] = useState<Shot | null>(null);
   const [shots, setShots] = useState<Shot[]>([]);
   const [stats, setStats] = useState<SessionStats | null>(null);
+
+  // Camera state
+  const [cameraStatus, setCameraStatus] = useState<CameraStatus>({
+    available: false,
+    enabled: false,
+    streaming: false,
+    ball_detected: false,
+    ball_confidence: 0,
+  });
 
   useEffect(() => {
     const newSocket = io(SOCKET_URL, {
@@ -60,7 +77,14 @@ export function useSocket() {
       setStats(data.stats);
     });
 
-    newSocket.on('session_state', (data: SessionState & { mock_mode?: boolean; debug_mode?: boolean }) => {
+    newSocket.on('session_state', (data: SessionState & {
+      mock_mode?: boolean;
+      debug_mode?: boolean;
+      camera_available?: boolean;
+      camera_enabled?: boolean;
+      camera_streaming?: boolean;
+      ball_detected?: boolean;
+    }) => {
       console.log('Session state received:', data);
       setShots(data.shots);
       setStats(data.stats);
@@ -72,6 +96,16 @@ export function useSocket() {
       }
       if (data.shots.length > 0) {
         setLatestShot(data.shots[data.shots.length - 1]);
+      }
+      // Update camera status from session state
+      if (data.camera_available !== undefined) {
+        setCameraStatus(prev => ({
+          ...prev,
+          available: data.camera_available!,
+          enabled: data.camera_enabled || false,
+          streaming: data.camera_streaming || false,
+          ball_detected: data.ball_detected || false,
+        }));
       }
     });
 
@@ -92,6 +126,19 @@ export function useSocket() {
 
     newSocket.on('radar_config', (data: RadarConfig) => {
       setRadarConfig(data);
+    });
+
+    // Camera events
+    newSocket.on('camera_status', (data: CameraStatus) => {
+      setCameraStatus(data);
+    });
+
+    newSocket.on('ball_detection', (data: { detected: boolean; confidence: number }) => {
+      setCameraStatus(prev => ({
+        ...prev,
+        ball_detected: data.detected,
+        ball_confidence: data.confidence,
+      }));
     });
 
     newSocket.on('session_cleared', () => {
@@ -131,6 +178,19 @@ export function useSocket() {
     socket?.emit('get_radar_config');
   }, [socket]);
 
+  // Camera controls
+  const toggleCamera = useCallback(() => {
+    socket?.emit('toggle_camera');
+  }, [socket]);
+
+  const toggleCameraStream = useCallback(() => {
+    socket?.emit('toggle_camera_stream');
+  }, [socket]);
+
+  const getCameraStatus = useCallback(() => {
+    socket?.emit('get_camera_status');
+  }, [socket]);
+
   return {
     connected,
     mockMode,
@@ -140,11 +200,15 @@ export function useSocket() {
     latestShot,
     shots,
     stats,
+    cameraStatus,
     clearSession,
     setClub,
     simulateShot,
     toggleDebug,
     updateRadarConfig,
     getRadarConfig,
+    toggleCamera,
+    toggleCameraStream,
+    getCameraStatus,
   };
 }

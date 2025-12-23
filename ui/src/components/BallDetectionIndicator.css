@@ -1,0 +1,70 @@
+.ball-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ball-indicator:hover {
+  transform: scale(1.05);
+}
+
+.ball-indicator--detected {
+  background: rgba(0, 255, 136, 0.15);
+  color: #00ff88;
+}
+
+.ball-indicator--searching {
+  background: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+}
+
+.ball-indicator--disabled {
+  background: rgba(128, 128, 128, 0.15);
+  color: #808080;
+}
+
+.ball-indicator__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.ball-indicator--detected .ball-indicator__icon {
+  animation: pulse-ball 1.5s ease-in-out infinite;
+}
+
+.ball-indicator--searching .ball-indicator__icon {
+  animation: search-ball 2s ease-in-out infinite;
+}
+
+.ball-indicator__text {
+  white-space: nowrap;
+}
+
+@keyframes pulse-ball {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes search-ball {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}

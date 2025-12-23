@@ -8,16 +8,34 @@ import json
 import os
 import random
 import statistics
+import threading
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, Response
 from flask_socketio import SocketIO
 from flask_cors import CORS
 
 from .launch_monitor import LaunchMonitor, Shot, ClubType
 from .ops243 import SpeedReading
+
+# Camera imports (optional)
+try:
+    import cv2
+    import numpy as np
+    from .camera_tracker import CameraTracker
+    CV2_AVAILABLE = True
+except ImportError:
+    CV2_AVAILABLE = False
+    CameraTracker = None
+
+try:
+    from picamera2 import Picamera2
+    PICAMERA_AVAILABLE = True
+except ImportError:
+    PICAMERA_AVAILABLE = False
 
 
 app = Flask(__name__, static_folder="../../ui/dist", static_url_path="")
@@ -30,6 +48,18 @@ mock_mode: bool = False
 debug_mode: bool = False
 debug_log_file = None
 debug_log_path: Optional[Path] = None
+
+# Camera state
+camera: Optional["Picamera2"] = None
+camera_tracker: Optional["CameraTracker"] = None
+camera_enabled: bool = False
+camera_streaming: bool = False
+camera_thread: Optional[threading.Thread] = None
+camera_stop_event: Optional[threading.Event] = None
+ball_detected: bool = False
+ball_detection_confidence: float = 0.0
+latest_frame: Optional[bytes] = None
+frame_lock = threading.Lock()
 
 
 def shot_to_dict(shot: Shot) -> dict:
@@ -59,6 +89,208 @@ def index():
 def static_files(path):
     """Serve static files."""
     return send_from_directory(app.static_folder, path)
+
+
+# Camera functions
+def init_camera(model_path: str = "models/golf_ball_yolo11n.onnx", imgsz: int = 256):
+    """Initialize camera and YOLO tracker."""
+    global camera, camera_tracker  # pylint: disable=global-statement
+
+    if not CV2_AVAILABLE:
+        print("OpenCV not available - camera disabled")
+        return False
+
+    if not PICAMERA_AVAILABLE:
+        print("picamera2 not available - camera disabled")
+        return False
+
+    try:
+        # Initialize PiCamera
+        camera = Picamera2()
+        config = camera.create_video_configuration(
+            main={"size": (640, 480), "format": "RGB888"},
+            buffer_count=2,
+            controls={"FrameRate": 30}
+        )
+        camera.configure(config)
+        camera.start()
+        time.sleep(0.5)
+
+        # Initialize YOLO tracker
+        if os.path.exists(model_path):
+            camera_tracker = CameraTracker(model_path=model_path)
+            print(f"Camera initialized with model: {model_path}")
+        else:
+            # Try default models
+            for fallback in ["models/golf_ball_yolo11n.pt", "yolov8n.pt"]:
+                if os.path.exists(fallback):
+                    camera_tracker = CameraTracker(model_path=fallback)
+                    print(f"Camera initialized with fallback model: {fallback}")
+                    break
+            else:
+                print("No YOLO model found - detection disabled")
+                camera_tracker = None
+
+        return True
+
+    except Exception as e:
+        print(f"Failed to initialize camera: {e}")
+        camera = None
+        camera_tracker = None
+        return False
+
+
+def camera_processing_loop():
+    """Background thread for camera processing."""
+    global ball_detected, ball_detection_confidence, latest_frame  # pylint: disable=global-statement
+
+    while not camera_stop_event.is_set():
+        if not camera or not camera_enabled:
+            time.sleep(0.1)
+            continue
+
+        try:
+            frame = camera.capture_array()
+
+            # Run detection if tracker available
+            if camera_tracker:
+                detection = camera_tracker.process_frame(frame)
+                new_detected = detection is not None
+                new_confidence = detection.confidence if detection else 0.0
+
+                # Emit update if state changed
+                if new_detected != ball_detected or abs(new_confidence - ball_detection_confidence) > 0.05:
+                    ball_detected = new_detected
+                    ball_detection_confidence = new_confidence
+                    socketio.emit("ball_detection", {
+                        "detected": ball_detected,
+                        "confidence": round(ball_detection_confidence, 2),
+                    })
+
+                # Get debug frame with overlay if streaming
+                if camera_streaming:
+                    frame = camera_tracker.get_debug_frame(frame)
+
+            # Encode frame for streaming
+            if camera_streaming:
+                # Convert RGB to BGR for cv2
+                frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                _, jpeg = cv2.imencode('.jpg', frame_bgr, [cv2.IMWRITE_JPEG_QUALITY, 70])
+                with frame_lock:
+                    latest_frame = jpeg.tobytes()
+
+        except Exception as e:
+            print(f"Camera processing error: {e}")
+            time.sleep(0.1)
+
+
+def start_camera_thread():
+    """Start the camera processing thread."""
+    global camera_thread, camera_stop_event  # pylint: disable=global-statement
+
+    if camera_thread and camera_thread.is_alive():
+        return
+
+    camera_stop_event = threading.Event()
+    camera_thread = threading.Thread(target=camera_processing_loop, daemon=True)
+    camera_thread.start()
+    print("Camera processing thread started")
+
+
+def stop_camera_thread():
+    """Stop the camera processing thread."""
+    global camera_thread, camera_stop_event  # pylint: disable=global-statement
+
+    if camera_stop_event:
+        camera_stop_event.set()
+    if camera_thread:
+        camera_thread.join(timeout=2.0)
+        camera_thread = None
+
+
+def generate_mjpeg():
+    """Generator for MJPEG stream."""
+    while True:
+        if not camera_streaming:
+            break
+
+        with frame_lock:
+            frame = latest_frame
+
+        if frame:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        else:
+            time.sleep(0.03)
+
+
+@app.route("/camera/stream")
+def camera_stream():
+    """MJPEG stream endpoint."""
+    if not camera_enabled or not camera_streaming:
+        return "Camera not available", 503
+
+    return Response(
+        generate_mjpeg(),
+        mimetype='multipart/x-mixed-replace; boundary=frame'
+    )
+
+
+@socketio.on("toggle_camera")
+def handle_toggle_camera():
+    """Toggle camera on/off."""
+    global camera_enabled  # pylint: disable=global-statement
+
+    if not camera:
+        socketio.emit("camera_status", {
+            "enabled": False,
+            "available": False,
+            "error": "Camera not initialized"
+        })
+        return
+
+    camera_enabled = not camera_enabled
+    socketio.emit("camera_status", {
+        "enabled": camera_enabled,
+        "available": True,
+        "streaming": camera_streaming,
+    })
+    print(f"Camera {'enabled' if camera_enabled else 'disabled'}")
+
+
+@socketio.on("toggle_camera_stream")
+def handle_toggle_camera_stream():
+    """Toggle camera streaming on/off."""
+    global camera_streaming  # pylint: disable=global-statement
+
+    if not camera or not camera_enabled:
+        socketio.emit("camera_status", {
+            "enabled": camera_enabled,
+            "available": camera is not None,
+            "streaming": False,
+            "error": "Camera not enabled"
+        })
+        return
+
+    camera_streaming = not camera_streaming
+    socketio.emit("camera_status", {
+        "enabled": camera_enabled,
+        "available": True,
+        "streaming": camera_streaming,
+    })
+    print(f"Camera streaming {'started' if camera_streaming else 'stopped'}")
+
+
+@socketio.on("get_camera_status")
+def handle_get_camera_status():
+    """Get current camera status."""
+    socketio.emit("camera_status", {
+        "enabled": camera_enabled,
+        "available": camera is not None,
+        "streaming": camera_streaming,
+        "ball_detected": ball_detected,
+        "ball_confidence": round(ball_detection_confidence, 2),
+    })
 
 
 def start_debug_logging():
@@ -129,6 +361,10 @@ def handle_connect():
             "shots": shots,
             "mock_mode": mock_mode,
             "debug_mode": debug_mode,
+            "camera_available": camera is not None,
+            "camera_enabled": camera_enabled,
+            "camera_streaming": camera_streaming,
+            "ball_detected": ball_detected,
         })
 
 
@@ -441,6 +677,13 @@ def main():
         "--web-port", type=int, default=8080, help="Web server port (default: 8080)"
     )
     parser.add_argument("--debug", "-d", action="store_true", help="Enable debug mode")
+    parser.add_argument(
+        "--camera", "-c", action="store_true", help="Enable camera for ball detection"
+    )
+    parser.add_argument(
+        "--camera-model", default="models/golf_ball_yolo11n.onnx",
+        help="Path to YOLO model for ball detection"
+    )
     args = parser.parse_args()
 
     print("=" * 50)
@@ -454,12 +697,25 @@ def main():
     if args.mock:
         print("Running in MOCK mode - no radar required")
         print("Simulate shots via WebSocket or API")
+
+    # Initialize camera if requested
+    if args.camera:
+        if init_camera(model_path=args.camera_model):
+            start_camera_thread()
+            print(f"Camera enabled with model: {args.camera_model}")
+        else:
+            print("Camera initialization failed - running without camera")
+
     print(f"Server starting at http://{args.host}:{args.web_port}")
     print()
 
     try:
         socketio.run(app, host=args.host, port=args.web_port, debug=args.debug, allow_unsafe_werkzeug=True)
     finally:
+        stop_camera_thread()
+        if camera:
+            camera.stop()
+            camera.close()
         stop_monitor()
 
 
