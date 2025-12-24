@@ -299,28 +299,21 @@ openlaunch/
 │   ├── __init__.py
 │   ├── ops243.py          # OPS243-A radar driver
 │   ├── launch_monitor.py  # Main launch monitor
-│   └── server.py          # WebSocket server for UI
+│   ├── server.py          # WebSocket server for UI
+│   └── camera_tracker.py  # YOLO ball tracking
 ├── ui/                    # React frontend
 │   ├── src/
 │   │   ├── components/    # React components
 │   │   ├── hooks/         # Custom hooks (WebSocket)
 │   │   └── App.tsx        # Main app
 │   └── package.json
-├── archive/               # Previous CDM324 approach (reference)
+├── scripts/               # Utility scripts
+├── models/                # YOLO models for ball detection
 ├── docs/                  # Documentation
+├── archive/               # Previous CDM324 approach (reference)
 ├── pyproject.toml
 └── README.md
 ```
-
-## Previous CDM324/HB100 Approach
-
-An earlier version of this project attempted to use cheap CDM324/HB100 radar modules with custom amplification. This approach was abandoned due to insufficient detection range (~2-3 feet vs the required ~5-10 feet for practical use). The original code is preserved in the `archive/cdm324_approach/` directory for reference.
-
-The OPS243-A costs more but provides:
-- Built-in signal processing
-- Higher transmit power
-- Better antenna design
-- Reliable detection at practical distances
 
 ## Contributing
 

@@ -8,7 +8,7 @@ calculates launch angle from the trajectory.
 import math
 import time
 from dataclasses import dataclass
-from typing import Optional, List, Tuple
+from typing import Optional, List
 from collections import deque
 
 try:
@@ -345,53 +345,3 @@ class CameraTracker:
         cv2.putText(display, status, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
 
         return display
-
-
-def estimate_spin_rate(
-    ball_speed_mph: float,
-    club_type: str,
-    launch_angle: Optional[float] = None
-) -> Tuple[int, int]:
-    """
-    Estimate spin rate based on ball speed and club type.
-
-    This is a rough approximation based on TrackMan averages.
-    Actual spin varies widely based on strike quality, ball type, etc.
-
-    Args:
-        ball_speed_mph: Ball speed in mph
-        club_type: Club type string (driver, 7-iron, pw, etc.)
-        launch_angle: Optional launch angle to refine estimate
-
-    Returns:
-        Tuple of (estimated_spin_rpm, uncertainty_rpm)
-    """
-    # Average spin rates by club (TrackMan PGA Tour data)
-    # Format: (typical_spin_rpm, variation_rpm)
-    SPIN_BY_CLUB = {
-        "driver": (2700, 500),
-        "3-wood": (3700, 600),
-        "5-wood": (4500, 600),
-        "hybrid": (4500, 700),
-        "3-iron": (4500, 700),
-        "4-iron": (4800, 700),
-        "5-iron": (5300, 700),
-        "6-iron": (6200, 800),
-        "7-iron": (7100, 800),
-        "8-iron": (8000, 900),
-        "9-iron": (8700, 900),
-        "pw": (9300, 1000),
-        "unknown": (5000, 2000),
-    }
-
-    club_lower = club_type.lower()
-    base_spin, variation = SPIN_BY_CLUB.get(club_lower, SPIN_BY_CLUB["unknown"])
-
-    # Adjust based on ball speed (faster = generally less spin for same club)
-    # This is a simplification
-    if club_lower == "driver":
-        # Driver spin varies more with speed
-        speed_factor = 1.0 + (150 - ball_speed_mph) * 0.005  # Lower speed = more spin
-        base_spin = int(base_spin * max(0.7, min(1.3, speed_factor)))
-
-    return (base_spin, variation)
