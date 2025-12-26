@@ -14,6 +14,7 @@ OpenLaunch is an open-source golf launch monitor that measures ball speed using 
 
 - **Ball Speed**: 30-220 mph range with ±0.5% accuracy
 - **Estimated Carry Distance**: Based on ball speed (simplified model)
+- **Launch Angle** (optional): With Raspberry Pi camera module
 
 ### Hardware
 
@@ -23,6 +24,8 @@ OpenLaunch is an open-source golf launch monitor that measures ball speed using 
 | Raspberry Pi 5 | (or any computer with USB) | ~$80 |
 | USB Cable | Micro USB to connect radar | ~$5 |
 | **Total** | | **~$310** |
+
+See [docs/PARTS.md](docs/PARTS.md) for the full parts list including optional camera module.
 
 ## Quick Start
 
@@ -80,6 +83,8 @@ For kiosk mode on Raspberry Pi (fullscreen):
 ```bash
 chromium-browser --kiosk http://localhost:8080
 ```
+
+See [docs/raspberry-pi-setup.md](docs/raspberry-pi-setup.md) for complete Raspberry Pi setup instructions including auto-start and camera configuration.
 
 ### Python API
 
@@ -256,12 +261,13 @@ radar.save_config()
 
 ## Limitations
 
-### What OpenLaunch Does NOT Measure
+### What OpenLaunch Does NOT Measure (Yet)
 
-- **Launch Angle**: Requires camera or additional sensors
 - **Spin Rate**: Requires high-speed camera
 - **Club Speed**: Could be added with timing/positioning changes
 - **Side Spin / Curve**: Requires multiple sensors or camera
+
+Note: **Launch Angle** is available with the optional camera module. See [Camera Setup](#camera-calibration).
 
 ### Accuracy Considerations
 
@@ -317,13 +323,15 @@ openlaunch/
 
 ## Contributing
 
-Contributions welcome! Areas of interest:
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-- **Camera integration**: Add launch angle detection
+Areas of interest:
+
 - **Better distance models**: Improve carry estimates with more physics
 - **Club detection**: Detect club head speed
-- **GUI**: Create a nice visual interface
+- **Spin detection**: Add high-speed camera for spin rate
 - **Mobile app**: Bluetooth connection to phone
+- **Hardware acceleration**: Optimize YOLO for Hailo/Coral accelerators
 
 ### Camera Calibration
 
@@ -363,6 +371,8 @@ python scripts/calibrate_camera.py --exposure 2000 --gain 4.0 --threshold 200
 
 The script will display final settings when you exit - use these values to configure `DetectorConfig` in your code.
 
+For YOLO model optimization and FPS tuning, see [docs/yolo-performance-tuning.md](docs/yolo-performance-tuning.md).
+
 ### Running Tests
 
 ```bash
@@ -376,9 +386,19 @@ pytest tests/ -v
 
 ### Contributing Guidelines
 
-- **Tests required**: All new features and bug fixes should include tests. Run `pytest tests/ -v` to verify all tests pass before submitting a PR.
-- **Code quality**: Code must pass pylint with a score of 9+. Run `pylint src/openlaunch/` to check.
-- **UI changes**: Ensure the UI builds successfully with `cd ui && npm run build`.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full guidelines. Quick summary:
+
+- **Tests required**: Run `pytest tests/ -v` before submitting a PR
+- **Code quality**: Run `pylint src/openlaunch/` (score 9+)
+- **UI changes**: Run `cd ui && npm run build` to verify
+
+## Documentation
+
+- [Raspberry Pi Setup Guide](docs/raspberry-pi-setup.md) - Complete Pi 5 setup with touchscreen and camera
+- [Parts List](docs/PARTS.md) - Full hardware requirements
+- [YOLO Performance Tuning](docs/yolo-performance-tuning.md) - Optimize ball detection FPS
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute
+- [Changelog](docs/CHANGELOG.md) - Version history
 
 ## License
 
